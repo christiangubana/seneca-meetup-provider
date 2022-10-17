@@ -1,8 +1,6 @@
 /* Copyright © 2022 Seneca Project Contributors, MIT License. */
 
-
-const Pkg = require('../package.json')
-
+const { request, gql } = require('graphql-request')
 
 type MeetUpProviderOptions = {
   url: string
@@ -21,7 +19,15 @@ function MeetupProvider(this: any, options: MeetUpProviderOptions) {
   seneca
     .message('sys:provider,provider:meetup,get:info', get_info)
 
-
+    async function makeRequest() {
+      const endpoint = 'https://api.graph.cool/simple/v1/cixos23120m0n0173veiiwrjr' //dummy API / to be changed
+    
+      const data = await request(endpoint)
+      console.log(JSON.stringify(data, undefined, 2))
+    }
+    
+    makeRequest().catch((error) => console.error(error))
+    
   const makeUrl = (suffix: string, q: any) => {
     let url = options.url + suffix
     if (q) {
