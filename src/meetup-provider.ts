@@ -21,8 +21,17 @@ function MeetupProvider(this: any, options: MeetUpProviderOptions) {
 
     async function makeRequest() {
       const endpoint = 'https://api.graph.cool/simple/v1/cixos23120m0n0173veiiwrjr' //dummy API / to be changed
-    
-      const data = await request(endpoint)
+
+      const query = gql`
+       {
+          event(id: "276754274") {
+            title
+            description
+            dateTime
+          }
+       }
+      `
+      const data = await request(endpoint, query)
       console.log(JSON.stringify(data, undefined, 2))
     }
     
