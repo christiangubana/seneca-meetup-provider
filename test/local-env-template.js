@@ -1,6 +1,6 @@
 module.exports = {
-  TANGOCARD_NAME: '<NAME>',
-  TANGOCARD_KEY: '<KEY>',
-  TANGOCARD_CUSTID: '<customerIdentifier>',
-  TANGOCARD_ACCID: '<accountIdentifier>',
+  MEETUP_NAME: '<NAME>',
+  MEETUP_KEY: '<KEY>',
+  MEETUP_CUSTID: '<customerIdentifier>',
+  MEETUP_ACCID: '<accountIdentifier>',
 }
