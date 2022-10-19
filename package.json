@@ -1,20 +1,20 @@
 {
-  "name": "@seneca/tangocard-provider",
+  "name": "@seneca/meetup-provider",
   "version": "0.1.2",
-  "main": "dist/tangocard-provider.js",
+  "main": "dist/meetup-provider.js",
   "type": "commonjs",
-  "types": "dist/tangocard-provider.d.ts",
-  "description": "Seneca entity provider for the Tangocard API.",
-  "homepage": "https://github.com/senecajs/seneca-tangocard-provider",
+  "types": "dist/meetup-provider.d.ts",
+  "description": "Seneca entity provider for the Meetup API.",
+  "homepage": "https://github.com/senecajs/seneca-meetup-provider",
   "keywords": [
     "seneca",
-    "tangocard",
-    "tangocard-provider"
+    "meetup",
+    "meetup-provider"
   ],
   "author": "Richard Rodger - richardrodger.com",
   "repository": {
     "type": "git",
-    "url": "git://tangocard.com/senecajs/seneca-tangocard-provider.git"
+    "url": "git://meetup.com/senecajs/seneca-meetup-provider.git"
   },
   "scripts": {
     "test": "jest --coverage",

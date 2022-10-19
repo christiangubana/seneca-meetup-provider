@@ -2,11 +2,11 @@
 /* Copyright © 2022 Seneca Project Contributors, MIT License. */
 Object.defineProperty(exports, "__esModule", { value: true });
 const Pkg = require('../package.json');
-function TangocardProvider(options) {
+function MeetupProvider(options) {
     const seneca = this;
     const entityBuilder = this.export('provider/entityBuilder');
     seneca
-        .message('sys:provider,provider:tangocard,get:info', get_info);
+        .message('sys:provider,provider:meetup,get:info', get_info);
     const makeUrl = (suffix, q) => {
         let url = options.url + suffix;
         if (q) {
@@ -34,8 +34,8 @@ function TangocardProvider(options) {
             return json;
         }
         else {
-            let err = new Error('TangocardProvider ' + res.status);
-            err.tangocardResponse = res;
+            let err = new Error('MeetupProvider ' + res.status);
+            err.meetupResponse = res;
             throw err;
         }
     };
@@ -51,7 +51,7 @@ function TangocardProvider(options) {
             return json;
         }
         else {
-            let err = new Error('TangocardProvider ' + res.status);
+            let err = new Error('MeetupProvider ' + res.status);
             try {
                 err.body = await res.json();
             }
@@ -65,13 +65,13 @@ function TangocardProvider(options) {
     async function get_info(_msg) {
         return {
             ok: true,
-            name: 'tangocard',
+            name: 'meetup',
             version: Pkg.version,
         };
     }
     entityBuilder(this, {
         provider: {
-            name: 'tangocard'
+            name: 'meetup'
         },
         entity: {
             customer: {
@@ -113,12 +113,12 @@ function TangocardProvider(options) {
                     save: {
                         action: async function (entize, msg) {
                             let body = this.util.deep(this.shared.primary, options.entity.order.save, msg.ent.data$(false));
-                            console.log('TANGO SAVE ORDER');
+                            console.log('MEETUP SAVE ORDER');
                             console.dir(body);
                             let json = await postJSON(makeUrl('orders', msg.q), makeConfig({
                                 body
                             }));
-                            console.log('TANGO SAVE ORDER RES');
+                            console.log('MEETUP SAVE ORDER RES');
                             console.dir(json);
                             let order = json;
                             order.id = order.referenceOrderID;
@@ -161,7 +161,7 @@ function TangocardProvider(options) {
         // }
     });
     seneca.prepare(async function () {
-        let res = await this.post('sys:provider,get:keymap,provider:tangocard');
+        let res = await this.post('sys:provider,get:keymap,provider:meetup');
         if (!res.ok) {
             throw this.fail('keymap');
         }
@@ -187,7 +187,7 @@ function TangocardProvider(options) {
 // Default options.
 const defaults = {
     // NOTE: include trailing /
-    url: 'https://integration-api.tangocard.com/raas/v2/',
+    url: 'https://integration-api.meetup.com/raas/v2/',
     // Use global fetch by default - if exists
     fetch: ('undefined' === typeof fetch ? undefined : fetch),
     entity: {
@@ -200,9 +200,9 @@ const defaults = {
     // TODO: Enable debug logging
     debug: false
 };
-Object.assign(TangocardProvider, { defaults });
-exports.default = TangocardProvider;
+Object.assign(MeetupProvider, { defaults });
+exports.default = MeetupProvider;
 if ('undefined' !== typeof (module)) {
-    module.exports = TangocardProvider;
+    module.exports = MeetupProvider;
 }
-//# sourceMappingURL=tangocard-provider.js.map
+//# sourceMappingURL=meetup-provider.js.map
