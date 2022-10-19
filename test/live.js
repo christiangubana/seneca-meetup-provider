@@ -15,20 +15,20 @@ Seneca({ legacy: false })
     // debug: true,
     file: [__dirname + '/local-env.js;?'],
     var: {
-      $TANGOCARD_KEY: String,
-      $TANGOCARD_NAME: String,
-      $TANGOCARD_CUSTID: String,
-      $TANGOCARD_ACCID: String,
+      $MEETUP_KEY: String,
+      $MEETUP_NAME: String,
+      $MEETUP_CUSTID: String,
+      $MEETUP_ACCID: String,
     }
   })
   .use('provider', {
     provider: {
-      tangocard: {
+      meetup: {
         keys: {
-          key: { value: '$TANGOCARD_KEY' },
-          name: { value: '$TANGOCARD_NAME' },
-          cust: { value: '$TANGOCARD_CUSTID' },
-          acc: { value: '$TANGOCARD_ACCID' },
+          key: { value: '$MEETUP_KEY' },
+          name: { value: '$MEETUP_NAME' },
+          cust: { value: '$MEETUP_CUSTID' },
+          acc: { value: '$MEETUP_ACCID' },
         }
       }
     }
@@ -40,7 +40,7 @@ Seneca({ legacy: false })
         save: {
           sendEmail: true,
           sender: {
-            email: 'richard+tangocard.sender.01@ricebridge.com',
+            email: 'richard+meetup.sender.01@ricebridge.com',
             firstName: 'Sender',
             lastName: ''
           }
@@ -51,26 +51,26 @@ Seneca({ legacy: false })
   .ready(async function() {
     const seneca = this
 
-    console.log(await seneca.post('sys:provider,provider:tangocard,get:info'))
+    console.log(await seneca.post('sys:provider,provider:meetup,get:info'))
     
-    const brands = await seneca.entity("provider/tangocard/brand").list$({
+    const brands = await seneca.entity("provider/meetup/brand").list$({
       country: 'IE', verbose: false
     })
     console.log('brands',brands.length)
     // console.dir(brands,{depth:null})
     
-    let customers = await seneca.entity("provider/tangocard/customer").list$()
+    let customers = await seneca.entity("provider/meetup/customer").list$()
     console.log('customers', customers.length)
     console.dir(customers,{depth:null})
     
-    let orders = await seneca.entity('provider/tangocard/order').list$()
+    let orders = await seneca.entity('provider/meetup/order').list$()
     console.log('orders',orders.length)
 
     
     let mark = Math.random()+''
     let utid = 'U768452'
     
-    let order = seneca.entity('provider/tangocard/order').data$({
+    let order = seneca.entity('provider/meetup/order').data$({
       amount: 10,
       // campaign: 'test01',
       campaign: '',
@@ -80,7 +80,7 @@ Seneca({ legacy: false })
       message: 'msg '+mark,
       notes: 'note '+mark,
       recipient: {
-        email: 'richard+tangocard.test.01@ricebridge.com',
+        email: 'richard+meetup.test.01@ricebridge.com',
         firstName: 'First',
         lastName: ''
       },
