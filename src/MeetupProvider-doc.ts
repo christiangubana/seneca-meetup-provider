@@ -4,7 +4,7 @@
 const docs = {
 
   get_info: {
-    desc: 'Get information about the Tangocard SDK.',
+    desc: 'Get information about the Meetup API.',
   },
 
 }

@@ -1,10 +1,8 @@
 /* Copyright © 2022 Seneca Project Contributors, MIT License. */
 
+const { request, gql } = require('graphql-request')
 
-const Pkg = require('../package.json')
-
-
-type TangocardProviderOptions = {
+type MeetUpProviderOptions = {
   url: string
   fetch: any
   entity: Record<string, any>
@@ -12,16 +10,33 @@ type TangocardProviderOptions = {
 }
 
 
-function TangocardProvider(this: any, options: TangocardProviderOptions) {
+function MeetupProvider(this: any, options: MeetUpProviderOptions) {
   const seneca: any = this
 
   const entityBuilder = this.export('provider/entityBuilder')
 
 
   seneca
-    .message('sys:provider,provider:tangocard,get:info', get_info)
+    .message('sys:provider,provider:meetup,get:info', get_info)
 
+    async function makeRequest() {
+      const endpoint = 'https://api.graph.cool/simple/v1/cixos23120m0n0173veiiwrjr' //dummy API / to be changed
 
+      const query = gql`
+       {
+          event(id: "276754274") {
+            title
+            description
+            dateTime
+          }
+       }
+      `
+      const data = await request(endpoint, query)
+      console.log(JSON.stringify(data, undefined, 2))
+    }
+    
+    makeRequest().catch((error) => console.error(error))
+    
   const makeUrl = (suffix: string, q: any) => {
     let url = options.url + suffix
     if (q) {
@@ -55,8 +70,8 @@ function TangocardProvider(this: any, options: TangocardProviderOptions) {
       return json
     }
     else {
-      let err: any = new Error('TangocardProvider ' + res.status)
-      err.tangocardResponse = res
+      let err: any = new Error('MeetupProvider ' + res.status)
+      err.meetupResponse = res
       throw err
     }
   }
@@ -78,7 +93,7 @@ function TangocardProvider(this: any, options: TangocardProviderOptions) {
       return json
     }
     else {
-      let err: any = new Error('TangocardProvider ' + res.status)
+      let err: any = new Error('MeetupProvider ' + res.status)
       try {
         err.body = await res.json()
       }
@@ -94,7 +109,7 @@ function TangocardProvider(this: any, options: TangocardProviderOptions) {
   async function get_info(this: any, _msg: any) {
     return {
       ok: true,
-      name: 'tangocard',
+      name: 'meetup',
       version: Pkg.version,
     }
   }
@@ -102,7 +117,7 @@ function TangocardProvider(this: any, options: TangocardProviderOptions) {
 
   entityBuilder(this, {
     provider: {
-      name: 'tangocard'
+      name: 'meetup'
     },
     entity: {
       customer: {
@@ -151,14 +166,14 @@ function TangocardProvider(this: any, options: TangocardProviderOptions) {
                 msg.ent.data$(false)
               )
 
-              console.log('TANGO SAVE ORDER')
+              console.log('MEETUP SAVE ORDER')
               console.dir(body)
 
               let json: any = await postJSON(makeUrl('orders', msg.q), makeConfig({
                 body
               }))
 
-              console.log('TANGO SAVE ORDER RES')
+              console.log('MEETUP SAVE ORDER RES')
               console.dir(json)
 
               let order = json
@@ -208,7 +223,7 @@ function TangocardProvider(this: any, options: TangocardProviderOptions) {
 
   seneca.prepare(async function(this: any) {
     let res =
-      await this.post('sys:provider,get:keymap,provider:tangocard')
+      await this.post('sys:provider,get:keymap,provider:meetup')
 
     if (!res.ok) {
       throw this.fail('keymap')
@@ -241,10 +256,10 @@ function TangocardProvider(this: any, options: TangocardProviderOptions) {
 
 
 // Default options.
-const defaults: TangocardProviderOptions = {
+const defaults: MeetUpProviderOptions = {
 
   // NOTE: include trailing /
-  url: 'https://integration-api.tangocard.com/raas/v2/',
+  url: 'https://integration-api.meetup.com/raas/v2/',
 
   // Use global fetch by default - if exists
   fetch: ('undefined' === typeof fetch ? undefined : fetch),
@@ -262,10 +277,10 @@ const defaults: TangocardProviderOptions = {
 }
 
 
-Object.assign(TangocardProvider, { defaults })
+Object.assign(MeetUpProvider, { defaults })
 
-export default TangocardProvider
+export default MeetUpProvider
 
 if ('undefined' !== typeof (module)) {
-  module.exports = TangocardProvider
+  module.exports = MeetUpProvider
 }
