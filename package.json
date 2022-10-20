@@ -41,7 +41,8 @@
   },
   "dependencies": {
     "graphql": "^16.6.0",
-    "graphql-request": "^5.0.0"
+    "graphql-request": "^5.0.0",
+    "jsonwebtoken": "^8.5.1"
   },
   "peerDependencies": {
     "@seneca/env": ">=0.2",
