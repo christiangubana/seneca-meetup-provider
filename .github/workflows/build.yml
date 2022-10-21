@@ -13,8 +13,8 @@ jobs:
   build:
     environment: test
     env:
-      TRELLO_APIKEY: ${{secrets.TRELLO_APIKEY}}
-      TRELLO_USERTOKEN: ${{secrets.TRELLO_USERTOKEN}}
+      MEETUP_APIKEY: ${{secrets.MEETUP_APIKEY}}
+      MEETUP_USERTOKEN: ${{secrets.MEETUP_USERTOKEN}}
       
     timeout-minutes: 6
 

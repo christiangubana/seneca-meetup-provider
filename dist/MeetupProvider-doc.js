@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const docs = {
     get_info: {
-        desc: 'Get information about the Meetup API',
+        desc: 'Get information about the Meetup API.',
     },
 };
 exports.default = docs;

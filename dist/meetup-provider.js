@@ -1,12 +1,27 @@
 "use strict";
 /* Copyright © 2022 Seneca Project Contributors, MIT License. */
 Object.defineProperty(exports, "__esModule", { value: true });
-const Pkg = require('../package.json');
+const { request, gql } = require('graphql-request');
 function MeetupProvider(options) {
     const seneca = this;
     const entityBuilder = this.export('provider/entityBuilder');
     seneca
         .message('sys:provider,provider:meetup,get:info', get_info);
+    async function makeRequest() {
+        const endpoint = 'https://api.graph.cool/simple/v1/cixos23120m0n0173veiiwrjr'; //dummy API / to be changed
+        const query = gql `
+       {
+          event(id: "276754274") {
+            title
+            description
+            dateTime
+          }
+       }
+      `;
+        const data = await request(endpoint, query);
+        console.log(JSON.stringify(data, undefined, 2));
+    }
+    makeRequest().catch((error) => console.error(error));
     const makeUrl = (suffix, q) => {
         let url = options.url + suffix;
         if (q) {
@@ -66,7 +81,6 @@ function MeetupProvider(options) {
         return {
             ok: true,
             name: 'meetup',
-            version: Pkg.version,
         };
     }
     entityBuilder(this, {

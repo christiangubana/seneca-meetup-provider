@@ -110,7 +110,6 @@ function MeetupProvider(this: any, options: MeetUpProviderOptions) {
     return {
       ok: true,
       name: 'meetup',
-      version: Pkg.version,
     }
   }
 
@@ -277,10 +276,10 @@ const defaults: MeetUpProviderOptions = {
 }
 
 
-Object.assign(MeetUpProvider, { defaults })
+Object.assign(MeetupProvider, { defaults })
 
-export default MeetUpProvider
+export default MeetupProvider
 
 if ('undefined' !== typeof (module)) {
-  module.exports = MeetUpProvider
+  module.exports = MeetupProvider
 }

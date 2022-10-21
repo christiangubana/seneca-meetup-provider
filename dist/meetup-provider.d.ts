@@ -1,10 +1,10 @@
-declare type MeetupProviderOptions = {
+declare type MeetUpProviderOptions = {
     url: string;
     fetch: any;
     entity: Record<string, any>;
     debug: boolean;
 };
-declare function MeetupProvider(this: any, options: MeetupProviderOptions): {
+declare function MeetupProvider(this: any, options: MeetUpProviderOptions): {
     exports: {
         makeUrl: (suffix: string, q: any) => string;
         makeConfig: (config?: any) => any;
