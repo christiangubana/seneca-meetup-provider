@@ -1,6 +1,9 @@
 /* Copyright © 2022 Seneca Project Contributors, MIT License. */
 
-const { request, gql } = require('graphql-request')
+const fs = require('fs');
+const jwt = require('jsonwebtoken');
+const privateKey = fs.readFileSync('../private.key', 'utf8');
+const { request, gql } = require('graphql-request');
 
 type MeetUpProviderOptions = {
   url: string
@@ -8,6 +11,52 @@ type MeetUpProviderOptions = {
   entity: Record<string, any>
   debug: boolean
 }
+
+module.exports = {
+  sign: (payload: any, $Options: { issuer: any; subject: any; audience: any; }) => {
+   /*
+    sOptions = {
+     issuer: "meetup.com",
+     subject: "https://www.meetup.com/pro/rjrodger/", 
+     audience: "api.meetup.com" // this should be provided by client
+    }
+   */
+   // Token signing options
+   var signOptions = {
+       issuer:  $Options.issuer,
+       subject:  $Options.subject,
+       audience:  $Options.audience,
+       expiresIn:  "30d",    // 30 days validity
+       algorithm:  "HS256"    
+   };
+   return jwt.sign(payload, privateKey, signOptions);
+ },
+ verify: (token: any, $Option: { issuer: any; subject: any; audience: any; }) => {
+   /*
+    vOption = {
+     issuer: "meetup.com",
+     subject: "https://www.meetup.com/pro/rjrodger/", 
+     audience: "api.meetup.com" 
+    }  
+   */
+   var verifyOptions = {
+       issuer:  $Option.issuer,
+       subject:  $Option.subject,
+       audience:  $Option.audience,
+       expiresIn:  "30d",
+       algorithm:  ["HS256"]
+   };
+    try{
+      return jwt.verify(token, verifyOptions);
+    }catch (err){
+      return false;
+    }
+ },
+  decode: (token: any) => {
+     return jwt.decode(token, {complete: true});
+     //returns null if token is invalid
+  }
+ }
 
 
 function MeetupProvider(this: any, options: MeetUpProviderOptions) {
@@ -18,24 +67,6 @@ function MeetupProvider(this: any, options: MeetUpProviderOptions) {
 
   seneca
     .message('sys:provider,provider:meetup,get:info', get_info)
-
-    async function makeRequest() {
-      const endpoint = 'https://api.graph.cool/simple/v1/cixos23120m0n0173veiiwrjr' //dummy API / to be changed
-
-      const query = gql`
-       {
-          event(id: "276754274") {
-            title
-            description
-            dateTime
-          }
-       }
-      `
-      const data = await request(endpoint, query)
-      console.log(JSON.stringify(data, undefined, 2))
-    }
-    
-    makeRequest().catch((error) => console.error(error))
     
   const makeUrl = (suffix: string, q: any) => {
     let url = options.url + suffix
@@ -258,7 +289,7 @@ function MeetupProvider(this: any, options: MeetUpProviderOptions) {
 const defaults: MeetUpProviderOptions = {
 
   // NOTE: include trailing /
-  url: 'https://integration-api.meetup.com/raas/v2/',
+  url: 'https://secure.meetup.com/oauth2/access',
 
   // Use global fetch by default - if exists
   fetch: ('undefined' === typeof fetch ? undefined : fetch),

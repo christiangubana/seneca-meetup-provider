@@ -9,7 +9,7 @@ const path = require("path");
 const jwt = require("jsonwebtoken");
 
 // var privateKEY = fs.readFileSync('./private.key', 'utf8');
-const privateKey = fs.readFileSync(path.join(__dirname, "/private.key"),"utf8");
+const privateKey = fs.readFileSync(path.join(__dirname, "../private.key"),"utf8");
 
 const sOptions = {
   issuer: 'meetup.com',
@@ -33,7 +33,7 @@ Seneca({ legacy: false })
       $AUTHORIZED_MEMBER_ID: String,
       $AUDIENCE: String,
       $EXPIRE_IN: Number,
-      ALGORITHM: String
+      $ALGORITHM: String
     }
   })
   .use('provider', {

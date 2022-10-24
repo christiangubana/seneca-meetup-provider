@@ -78,20 +78,22 @@ async function makeSeneca() {
       // debug: true,
       file: [__dirname + '/local-env.js;?'],
       var: {
-        $MEETUP_KEY: String,
-        $MEETUP_NAME: String,
-        $MEETUP_CUSTID: String,
-        $MEETUP_ACCID: String,
+        $YOUR_CONSUMER_KEY: String,
+        $AUTHORIZED_MEMBER_ID: String,
+        $AUDIENCE: String,
+        $EXPIRE_IN: Number,
+        $ALGORITHM: String
       }
     })
     .use('provider', {
       provider: {
         meetup: {
           keys: {
-            key: { value: '$MEETUP_KEY' },
-            name: { value: '$MEETUP_NAME' },
-            cust: { value: '$MEETUP_CUSTID' },
-            acc: { value: '$MEETUP_ACCID' },
+            issuer: { value: '$YOUR_CONSUMER_KEY' },
+            audience: { value: '$AUDIENCE' },
+            subject: { value: '$AUTHORIZED_MEMBER_ID' },
+            expiresIn: { value: '$EXPIRE_IN'},
+            algorithm: { value: '$ALGORITHM' },
           }
         }
       }
