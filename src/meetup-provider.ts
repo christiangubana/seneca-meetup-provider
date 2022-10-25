@@ -227,6 +227,6 @@ Object.assign(provider, { defaults })
 export default MeetupProvider
 
 if ('undefined' !== typeof (module)) {
-  module.exports = provider
+  module.exports = MeetupProvider
 }
 
