@@ -8,7 +8,6 @@ const fs = require("fs");
 const path = require("path");
 const jwt = require("jsonwebtoken");
 
-// var privateKEY = fs.readFileSync('./private.key', 'utf8');
 const privateKey = fs.readFileSync(path.join(__dirname, "../private.key"),"utf8");
 
 const sOptions = {
@@ -27,24 +26,21 @@ Seneca({ legacy: false })
   .use('entity')
   .use('env', {
     // debug: true,
-    file: [__dirname + '/local-env.template.js'],
+    file: [__dirname + '/local-env.js'],
     var: {
-      $YOUR_CONSUMER_KEY: String,
-      $AUTHORIZED_MEMBER_ID: String,
-      $AUDIENCE: String,
-      $EXPIRE_IN: Number,
-      $ALGORITHM: String
+      API_KEY: process.env.MEETUP_JWTOKEN,
+      YOUR_CONSUMER_KEY: process.env.YOUR_CONSUMER_KEY,
+      AUTHORIZED_MEMBER_ID: process.env.AUTHORIZED_MEMBER_ID,
+      AUDIENCE: process.env.AUDIENCE,
     }
   })
   .use('provider', {
     provider: {
       meetup: {
         keys: {
-          issuer: { value: '$YOUR_CONSUMER_KEY' },
-          audience: { value: '$AUDIENCE' },
-          subject: { value: '$AUTHORIZED_MEMBER_ID' },
-          expiresIn: { value: '$EXPIRE_IN'},
-          algorithm: { value: '$ALGORITHM' },
+          key: { value: 'MEETUP_KEY' },
+          name: { value: 'MEETUP_NAME' },
+          cust: { value: 'MEETUP_CUSTID' },
         }
       }
     }
