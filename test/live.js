@@ -26,7 +26,7 @@ Seneca({ legacy: false })
   .use('entity')
   .use('env', {
     // debug: true,
-    file: [__dirname + '/loca-env.js'],
+    file: [__dirname + '/local-env.js'],
     var: {
       API_KEY: process.env.MEETUP_JWTOKEN,
       YOUR_CONSUMER_KEY: process.env.YOUR_CONSUMER_KEY,
