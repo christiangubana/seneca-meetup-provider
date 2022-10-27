@@ -9,7 +9,7 @@ const path = require("path");
 const jwt = require("jsonwebtoken");
 
 // var privateKEY = fs.readFileSync('./private.key', 'utf8');
-const privateKey = fs.readFileSync(path.join(__dirname, "/private.key"),"utf8");
+const privateKey = fs.readFileSync(path.join(__dirname, "../private.key"),"utf8");
 
 const sOptions = {
   issuer: 'meetup.com',
