@@ -2,20 +2,35 @@
 /* Copyright © 2022 Seneca Project Contributors, MIT License. */
 Object.defineProperty(exports, "__esModule", { value: true });
 const { request, gql } = require('graphql-request');
+const fs = require("fs");
+const path = require("path");
+const jwt = require("jsonwebtoken");
+const privateKey = fs.readFileSync(path.join(__dirname, "../private.key"), "utf8");
+const sOptions = {
+    issuer: 'meetup.com',
+    audience: 'https://www.meetup.com/pro/rjrodger/',
+    expiresIn: Math.floor(Date.now() / 1000) + (60 * 60),
+    algorithm: 'HS256',
+};
+const SIGNED_JWT = jwt.sign({}, privateKey, sOptions);
 function MeetupProvider(options) {
     const seneca = this;
     const entityBuilder = this.export('provider/entityBuilder');
     seneca
         .message('sys:provider,provider:meetup,get:info', get_info);
     async function makeRequest() {
-        const endpoint = 'https://api.graph.cool/simple/v1/cixos23120m0n0173veiiwrjr'; //dummy API / to be changed
+        const endpoint = `https://secure.meetup.com/oauth2/accessgrant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${SIGNED_JWT}`;
         const query = gql `
        {
-          event(id: "276754274") {
-            title
-            description
-            dateTime
+        event(id: "276754274") {
+          title
+          description
+          host {
+            email
+            name
           }
+          dateTime
+        }
        }
       `;
         const data = await request(endpoint, query);
@@ -201,7 +216,7 @@ function MeetupProvider(options) {
 // Default options.
 const defaults = {
     // NOTE: include trailing /
-    url: 'https://integration-api.meetup.com/raas/v2/',
+    url: `https://secure.meetup.com/oauth2/accessgrant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${SIGNED_JWT}`,
     // Use global fetch by default - if exists
     fetch: ('undefined' === typeof fetch ? undefined : fetch),
     entity: {

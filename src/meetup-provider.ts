@@ -1,232 +1,304 @@
 /* Copyright © 2022 Seneca Project Contributors, MIT License. */
 
-import provider from "@seneca/provider";
+const { request, gql } = require('graphql-request');
+
 
 const fs = require("fs");
+const path = require("path");
 const jwt = require("jsonwebtoken");
-const privateKey = fs.readFileSync("../private.key", "utf8");
 
-type MeetUpProviderOptions = {};
-
-type ModifySpec = {
-  field?: Record<string, {
-    src: string
-  }>
-}
+const privateKey = fs.readFileSync(path.join(__dirname, "../private.key"),"utf8");
 
 const sOptions = {
-  issuer: process.env.YOUR_CONSUMER_KEY || "",
-  audience: process.env.AUTHORIZED_MEMBER_ID || "",
-  subject: process.env.AUDIENCE || "",
-  expiresIn: "30d",
-  algorithm: "HS256",
-};
+  issuer: 'meetup.com',
+  audience: 'https://www.meetup.com/pro/rjrodger/', //The intended recipient of the JWT
+  expiresIn: Math.floor(Date.now() / 1000) + (60 * 60),
+  algorithm: 'HS256',
+}
+const SIGNED_JWT = jwt.sign({}, privateKey, sOptions);
+
+type MeetUpProviderOptions = {
+  url: string
+  fetch: any
+  entity: Record<string, any>
+  debug: boolean
+}
+
 
 function MeetupProvider(this: any, options: MeetUpProviderOptions) {
-  const seneca: any = this;
+  const seneca: any = this
 
-  seneca.message("sys:provider,provider:meetup,get:info", userAuth);
+  const entityBuilder = this.export('provider/entityBuilder')
 
-  //Signin-User - Generate JWT
-  jwt.sign(privateKey, sOptions, function userAuth(err: any, token: any) {
-    if (err) {
-      err = {
-        name: "JsonWebTokenError",
-        message: err.message,
-      };
+
+  seneca
+    .message('sys:provider,provider:meetup,get:info', get_info)
+
+    async function makeRequest() {
+      const endpoint = `https://secure.meetup.com/oauth2/accessgrant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${SIGNED_JWT}` 
+
+      const query = gql`
+       {
+        event(id: "276754274") {
+          title
+          description
+          host {
+            email
+            name
+          }
+          dateTime
+        }
+       }
+      `
+      const data = await request(endpoint, query)
+      console.log(JSON.stringify(data, undefined, 2));
     }
-    // verify invalid token
-    try {
-      jwt.verify(token, "wrong-secret");
-    } catch (err) {
-      throw err
-    }
-    return jwt.sign(privateKey, sOptions);
-  });
+    
+    makeRequest().catch((error) => console.error(error))
+    
+  const makeUrl = (suffix: string, q: any) => {
+    let url = options.url + suffix
+    if (q) {
+      if ('string' === typeof q) {
+        url += '/' + encodeURIComponent(q)
+      }
+      else if ('object' === typeof q && 0 < Object.keys(q).length) {
+        url += '?' + Object
+          .entries(q)
+          .reduce(((u: any, kv: any) =>
+            (u.append(kv[0], kv[1]), u)), new URLSearchParams())
+          .toString()
 
-  const makeConfig = (config?: any) =>
-    seneca.util.deep(
-      {
-        headers: {
-          ...seneca.shared.headers,
-        },
-      },
-      config
-    );
-
-  async function userAuth(this: any, _msg: any) {
-    return {
-      ok: true,
-      name: "meetup",
-    };
-  }
-
-  const cmdBuilder: any = {
-    list: (seneca: any, cmdspec: any, entspec: any, spec: any) => {
-      seneca.message(makePattern(cmdspec, entspec, spec),
-        makeAction(cmdspec, entspec, spec))
-    },
-
-    load: (seneca: any, cmdspec: any, entspec: any, spec: any) => {
-      seneca.message(makePattern(cmdspec, entspec, spec),
-        makeAction(cmdspec, entspec, spec))
-    },
-
-    save: (seneca: any, cmdspec: any, entspec: any, spec: any) => {
-      seneca.message(makePattern(cmdspec, entspec, spec),
-        makeAction(cmdspec, entspec, spec))
-    },
-
-    remove: (seneca: any, cmdspec: any, entspec: any, spec: any) => {
-      seneca.message(makePattern(cmdspec, entspec, spec),
-        makeAction(cmdspec, entspec, spec))
-    },
-  }
-
-
-  const { Value } = seneca.valid
-
-  const validateSpec = seneca.valid({
-    provider: {
-      name: String
-    },
-
-    entity: Value({
-      cmd: Value({
-        action: Function
-      }, {})
-    }, {})
-  })
-
-//Ceated some utilities to make implementation easier
-
-  function entityBuilder(seneca: any, spec: any) {
-    spec = validateSpec(spec)
-
-    for (let entname in spec.entity) {
-      let entspec = spec.entity[entname]
-      entspec.name = entname
-      for (let cmdname in entspec.cmd) {
-        let cmdspec = entspec.cmd[cmdname]
-        cmdspec.name = cmdname
-        cmdBuilder[cmdname](seneca, cmdspec, entspec, spec)
       }
     }
+    return url
   }
 
-  seneca.prepare(async function (this: any) {
-    let res = await this.post("sys:provider,get:keymap,provider:meetup");
+  const makeConfig = (config?: any) => seneca.util.deep({
+    headers: {
+      ...seneca.shared.headers
+    }
+  }, config)
 
-    if (!res.ok) {
-      throw this.fail("keymap");
+
+  const getJSON = async (url: string, config?: any) => {
+    let res = await options.fetch(url, config)
+
+    if (200 == res.status) {
+      let json: any = await res.json()
+      return json
+    }
+    else {
+      let err: any = new Error('MeetupProvider ' + res.status)
+      err.meetupResponse = res
+      throw err
+    }
+  }
+
+
+  const postJSON = async (url: string, config: any) => {
+    config.body = 'string' === typeof config.body ? config.body :
+      JSON.stringify(config.body)
+
+    config.headers['Content-Type'] = config.headers['Content-Type'] ||
+      'application/json'
+
+    config.method = config.method || 'POST'
+
+    let res = await options.fetch(url, config)
+
+    if (200 <= res.status && res.status < 300) {
+      let json: any = await res.json()
+      return json
+    }
+    else {
+      let err: any = new Error('MeetupProvider ' + res.status)
+      try {
+        err.body = await res.json()
+      }
+      catch (e: any) {
+        err.body = await res.text()
+      }
+      err.status = res.status
+      throw err
+    }
+  }
+
+
+  async function get_info(this: any, _msg: any) {
+    return {
+      ok: true,
+      name: 'meetup',
+    }
+  }
+
+
+  entityBuilder(this, {
+    provider: {
+      name: 'meetup'
+    },
+    entity: {
+      customer: {
+        cmd: {
+          list: {
+            action: async function(this: any, entize: any, msg: any) {
+              let json: any = await getJSON(makeUrl('customers', msg.q), makeConfig())
+              let customers = json
+              let list = customers.map((data: any) => entize(data))
+              return list
+            },
+          }
+        }
+      },
+      brand: {
+        cmd: {
+          list: {
+            action: async function(this: any, entize: any, msg: any) {
+              let json: any = await getJSON(makeUrl('catalogs', msg.q), makeConfig())
+              let brands = json.brands
+              let list = brands.map((data: any) => entize(data))
+              return list
+            },
+          }
+        }
+      },
+      order: {
+        cmd: {
+          list: {
+            action: async function(this: any, entize: any, msg: any) {
+              let json: any = await getJSON(makeUrl('orders', msg.q), makeConfig())
+              let orders = json.orders
+              let list = orders.map((data: any) => entize(data))
+
+              // TODO: ensure seneca-transport preserves array props
+              list.page = json.page
+
+              return list
+            },
+          },
+          save: {
+            action: async function(this: any, entize: any, msg: any) {
+              let body = this.util.deep(
+                this.shared.primary,
+                options.entity.order.save,
+                msg.ent.data$(false)
+              )
+
+              console.log('MEETUP SAVE ORDER')
+              console.dir(body)
+
+              let json: any = await postJSON(makeUrl('orders', msg.q), makeConfig({
+                body
+              }))
+
+              console.log('MEETUP SAVE ORDER RES')
+              console.dir(json)
+
+              let order = json
+              order.id = order.referenceOrderID
+              return entize(order)
+            },
+          }
+        }
+      }
     }
 
-    let src = res.keymap.name.value + ":" + res.keymap.key.value;
-    let auth = Buffer.from(src).toString("base64");
+    // save: {
+    //   action: async function(this: any, entize: any, msg: any) {
+    //     let ent = msg.ent
+    //     try {
+    //       let res
+    //       if (ent.id) {
+    //         // TODO: util to handle more fields
+    //         res = await this.shared.sdk.updateBoard(ent.id, {
+    //           desc: ent.desc
+    //         })
+    //       }
+    //       else {
+    //         // TODO: util to handle more fields
+    //         let fields = {
+    //           name: ent.name,
+    //           desc: ent.desc,
+    //         }
+    //         res = await this.shared.sdk.addBoard(fields)
+    //       }
+
+    //       return entize(res)
+    //     }
+    //     catch (e: any) {
+    //       if (e.message.includes('invalid id')) {
+    //         return null
+    //       }
+    //       else {
+    //         throw e
+    //       }
+    //     }
+    //   }
+    // }
+  })
+
+
+
+  seneca.prepare(async function(this: any) {
+    let res =
+      await this.post('sys:provider,get:keymap,provider:meetup')
+
+    if (!res.ok) {
+      throw this.fail('keymap')
+    }
+
+    let src = res.keymap.name.value + ':' + res.keymap.key.value
+    let auth = Buffer.from(src).toString('base64')
 
     this.shared.headers = {
-      Authorization: "Basic " + auth,
-    };
+      Authorization: 'Basic ' + auth
+    }
 
     this.shared.primary = {
       customerIdentifier: res.keymap.cust.value,
       accountIdentifier: res.keymap.acc.value,
-    };
-  });
+    }
+
+  })
+
 
   return {
     exports: {
-      entityBuilder,
+      makeUrl,
       makeConfig,
-    },
-  };
-}
-
-// For external testing
-provider.intern = {
-  makePattern,
-  makeAction,
-  makeEntize,
-  applyModifySpec,
-}
-
-
-function makePattern(cmdspec: any, entspec: any, spec: any) {
-  return {
-    role: 'entity',
-    cmd: cmdspec.name,
-    zone: 'provider',
-    base: spec.provider.name,
-    name: entspec.name
-  }
-}
-
-
-
-function makeAction(cmdspec: any, entspec: any, spec: any) {
-  let canon = 'provider/' + spec.provider.name + '/' + entspec.name
-  let action = async function(this: any, msg: any, meta: any) {
-    // let entize = (data: any) => this.entity(canon).data$(data)
-    let entize = makeEntize(this, canon)
-    return cmdspec.action.call(this, entize, msg, meta)
-  }
-  Object.defineProperty(action, 'name', { value: 'load_' + entspec.name })
-  return action
-}
-
-function makeEntize(seneca: any, canon: any) {
-
-  // data -> Entity
-  // Entity -> data
-  return function entize(data: any, spec?: ModifySpec) {
-    let isEnt =
-      data &&
-      'string' === typeof data.entity$ &&
-      'function' === typeof data.data$
-
-    let out
-
-    if (isEnt) {
-      let raw = data.data$(false)
-      out = applyModifySpec(raw, spec)
-
-    }
-    else {
-      data = applyModifySpec(data, spec)
-      out = seneca.entity(canon).data$(data)
-    }
-
-    return out
-  }
-}
-
-function applyModifySpec(data: any, spec?: ModifySpec) {
-  if (spec) {
-    if (spec.field) {
-      for (let field in spec.field) {
-        let fieldSpec = spec.field[field]
-
-        // TODO: add more operations
-        // 'copy;' is the default operation
-        if (null != fieldSpec.src) {
-          data[field] = data[fieldSpec.src]
-        }
-      }
+      getJSON,
+      postJSON,
     }
   }
-  return data
 }
+
 
 // Default options.
 const defaults: MeetUpProviderOptions = {
-  provider: {}
+
+  // NOTE: include trailing /
+  url: `https://secure.meetup.com/oauth2/accessgrant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${SIGNED_JWT}`,
+
+  // Use global fetch by default - if exists
+  fetch: ('undefined' === typeof fetch ? undefined : fetch),
+
+  entity: {
+    order: {
+      save: {
+        // Default fields
+      }
+    }
+  },
+
+  // TODO: Enable debug logging
+  debug: false
 }
 
-Object.assign(provider, { defaults })
+
+Object.assign(MeetupProvider, { defaults })
 
 export default MeetupProvider
 
 if ('undefined' !== typeof (module)) {
   module.exports = MeetupProvider
 }
-
