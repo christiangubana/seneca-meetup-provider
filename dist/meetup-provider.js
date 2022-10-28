@@ -1,11 +1,11 @@
 "use strict";
 /* Copyright © 2022 Seneca Project Contributors, MIT License. */
 Object.defineProperty(exports, "__esModule", { value: true });
-const { request, gql } = require('graphql-request');
 const fs = require("fs");
 const path = require("path");
 const jwt = require("jsonwebtoken");
 const privateKey = fs.readFileSync(path.join(__dirname, "../private.key"), "utf8");
+const { request, gql, GraphQLClient } = require('graphql-request');
 const sOptions = {
     issuer: 'meetup.com',
     audience: 'https://www.meetup.com/pro/rjrodger/',
@@ -17,23 +17,25 @@ function MeetupProvider(options) {
     const seneca = this;
     const entityBuilder = this.export('provider/entityBuilder');
     seneca
-        .message('sys:provider,provider:meetup,get:info', get_info);
+        .message('sys:provider,provider:meetup,get:info', load_account);
+    //Access Meetup API
     async function makeRequest() {
         const endpoint = `https://secure.meetup.com/oauth2/accessgrant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${SIGNED_JWT}`;
-        const query = gql `
-       {
-        event(id: "276754274") {
-          title
-          description
-          host {
-            email
-            name
+        //Authenticate via HTTP heaser
+        const getMeetupEventsQuery = gql(`
+        query getEvents($eventID: String!) {
+          Event(title: $title) {
+            description
+            host {
+              name
+              email
+            }
+            dateTime
           }
-          dateTime
         }
-       }
-      `;
-        const data = await request(endpoint, query);
+      `);
+        //Make Graphql HTTP request against Meetup Endpoint
+        const data = await request(endpoint, getMeetupEventsQuery);
         console.log(JSON.stringify(data, undefined, 2));
     }
     makeRequest().catch((error) => console.error(error));
@@ -92,7 +94,7 @@ function MeetupProvider(options) {
             throw err;
         }
     };
-    async function get_info(_msg) {
+    async function load_account(_msg) {
         return {
             ok: true,
             name: 'meetup',
